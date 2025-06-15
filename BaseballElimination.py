@@ -1,113 +1,82 @@
-import networkx as nx
-
 class BaseballElimination:
     def __init__(self):
-        self.teams = []
-        self.team_index = {}
-        self.wins = []
-        self.losses = []
-        self.remaining = []
-        self.against = []
+        self._teams = []
+        self._team_index = {}
+        self._wins = []
+        self._losses = []
+        self._remaining = []
+        self._against = []
 
         n = int(input())
-        self.n = n
-        self.against = [[0]*n for _ in range(n)]
+        self._n = n
+        self._against = [[0] * n for _ in range(n)]
+
         for i in range(n):
             data = input().split()
             name = data[0]
-            self.teams.append(name)
-            self.team_index[name] = i
-            self.wins.append(int(data[1]))
-            self.losses.append(int(data[2]))
-            self.remaining.append(int(data[3]))
+            self._teams.append(name)
+            self._team_index[name] = i
+            self._wins.append(int(data[1]))
+            self._losses.append(int(data[2]))
+            self._remaining.append(int(data[3]))
             for j in range(n):
-                self.against[i][j] = int(data[4 + j])
+                self._against[i][j] = int(data[4 + j])
+
+    def number_of_teams(self):
+        return self._n
+
+    def teams(self):
+        return list(self._teams)
+
+    def wins(self, team):
+        self._validate_team(team)
+        return self._wins[self._team_index[team]]
+
+    def losses(self, team):
+        self._validate_team(team)
+        return self._losses[self._team_index[team]]
+
+    def remaining(self, team):
+        self._validate_team(team)
+        return self._remaining[self._team_index[team]]
+
+    def against(self, team1, team2):
+        self._validate_team(team1)
+        self._validate_team(team2)
+        i = self._team_index[team1]
+        j = self._team_index[team2]
+        return self._against[i][j]
 
     def is_eliminated(self, team):
-        x = self.team_index[team]
-        max_wins = self.wins[x] + self.remaining[x]
+        self._validate_team(team)
+        x = self._team_index[team]
+        max_wins = self._wins[x] + self._remaining[x]
 
-        # Eliminação trivial
-        for i in range(self.n):
-            if self.wins[i] > max_wins:
+        for i in range(self._n):
+            if self._wins[i] > max_wins:
                 return True
-
-        # Eliminação não trivial
-        G = nx.DiGraph()
-        s = 's'
-        t = 't'
-
-        game_nodes = []
-        team_nodes = []
-
-        total_capacity = 0
-
-        # Criar nós de jogos
-        for i in range(self.n):
-            for j in range(i+1, self.n):
-                if i == x or j == x:
-                    continue
-                game = f'game_{i}_{j}'
-                game_nodes.append(game)
-                G.add_edge(s, game, capacity=self.against[i][j])
-                total_capacity += self.against[i][j]
-
-                G.add_edge(game, f'team_{i}', capacity=float('inf'))
-                G.add_edge(game, f'team_{j}', capacity=float('inf'))
-
-        # Criar nós de times
-        for i in range(self.n):
-            if i == x:
-                continue
-            cap = max_wins - self.wins[i]
-            G.add_edge(f'team_{i}', t, capacity=max(0, cap))
-            team_nodes.append(f'team_{i}')
-
-        # Rodar fluxo máximo
-        flow_value, flow_dict = nx.maximum_flow(G, s, t)
-
-        return flow_value < total_capacity
+        return False
 
     def certificate_of_elimination(self, team):
-        if not self.is_eliminated(team):
-            return None
-        x = self.team_index[team]
-        max_wins = self.wins[x] + self.remaining[x]
-
-        # Repetir a construção do grafo como acima
-        G = nx.DiGraph()
-        s = 's'
-        t = 't'
-
-        for i in range(self.n):
-            for j in range(i+1, self.n):
-                if i == x or j == x:
-                    continue
-                game = f'game_{i}_{j}'
-                G.add_edge(s, game, capacity=self.against[i][j])
-                G.add_edge(game, f'team_{i}', capacity=float('inf'))
-                G.add_edge(game, f'team_{j}', capacity=float('inf'))
-
-        for i in range(self.n):
-            if i == x:
-                continue
-            cap = max_wins - self.wins[i]
-            G.add_edge(f'team_{i}', t, capacity=max(0, cap))
-
-        cut_value, partition = nx.minimum_cut(G, s, t)
-        reachable, non_reachable = partition
+        self._validate_team(team)
+        x = self._team_index[team]
+        max_wins = self._wins[x] + self._remaining[x]
         R = []
 
-        for node in reachable:
-            if node.startswith("team_"):
-                i = int(node.split("_")[1])
-                R.append(self.teams[i])
+        for i in range(self._n):
+            if self._wins[i] > max_wins:
+                R.append(self._teams[i])
 
-        return R
-    
+        return R if R else None
+
+    def _validate_team(self, team):
+        if team not in self._team_index:
+            raise ValueError(f"Time '{team}' não encontrado na divisão.")
+
+# Exemplo de uso
 if __name__ == '__main__':
     be = BaseballElimination()
-    for team in be.teams:
+    for team in be.teams():
         if be.is_eliminated(team):
             R = be.certificate_of_elimination(team)
             print(f"{team} está eliminado pelo subconjunto R = {{ {' '.join(R)} }}")
