@@ -1,7 +1,7 @@
 import networkx as nx
 
 class BaseballElimination:
-    def __init__(self, filename):
+    def __init__(self):
         self.teams = []
         self.team_index = {}
         self.wins = []
@@ -9,20 +9,19 @@ class BaseballElimination:
         self.remaining = []
         self.against = []
 
-        with open(filename) as f:
-            n = int(f.readline())
-            self.n = n
-            self.against = [[0]*n for _ in range(n)]
-            for i in range(n):
-                data = f.readline().split()
-                name = data[0]
-                self.teams.append(name)
-                self.team_index[name] = i
-                self.wins.append(int(data[1]))
-                self.losses.append(int(data[2]))
-                self.remaining.append(int(data[3]))
-                for j in range(n):
-                    self.against[i][j] = int(data[4 + j])
+        n = int(input())
+        self.n = n
+        self.against = [[0]*n for _ in range(n)]
+        for i in range(n):
+            data = input().split()
+            name = data[0]
+            self.teams.append(name)
+            self.team_index[name] = i
+            self.wins.append(int(data[1]))
+            self.losses.append(int(data[2]))
+            self.remaining.append(int(data[3]))
+            for j in range(n):
+                self.against[i][j] = int(data[4 + j])
 
     def is_eliminated(self, team):
         x = self.team_index[team]
@@ -105,11 +104,9 @@ class BaseballElimination:
                 R.append(self.teams[i])
 
         return R
-
+    
 if __name__ == '__main__':
-    arquivo = input("Digite o nome do arquivo:\n")
-    be = BaseballElimination(arquivo)
-    print("")
+    be = BaseballElimination()
     for team in be.teams:
         if be.is_eliminated(team):
             R = be.certificate_of_elimination(team)
